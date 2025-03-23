@@ -18,13 +18,19 @@ color LINE_COLOR = color(30, 250, 60);
 color OBJECT_COLOR = color(255, 10, 10);
 color TEXT_COLOR = RADAR_COLOR;
 
+// New GitHub repository URL
+final String GITHUB_URL = "https://github.com/jormunrod/sonar-arduino";
+
 import processing.serial.*;
-import java.awt.event.KeyEvent;
+import java.awt.Desktop;
+import java.net.URI;
 import java.io.IOException;
+import java.awt.event.KeyEvent;
 
 Serial myPort;
-PImage schoolLogo;    // Image for the top-left corner
-PImage fairImage;     // Image for the top-right corner
+PImage schoolLogo;    // Image for the top-left corner (project logo)
+PImage fairImage;     // Image for the top-right corner (fair image)
+PImage githubLogo;    // Logo for the GitHub link
 
 // Global sensor data variables
 int sensorAngle = 0;
@@ -35,15 +41,18 @@ boolean showMenu = true;
 
 void setup() {
   // Set an initial window size and make it resizable
-  size(800, 600);           // Adjust the dimensions as needed
+  size(800, 600);           // Adjust dimensions as needed
   surface.setResizable(true);
   smooth();
   
   // Load images from the "data" folder
   schoolLogo = loadImage("ies.jpeg");
   fairImage  = loadImage("feria.jpg");
+  githubLogo = loadImage("github.png");
+  
   if (schoolLogo == null)  println("Could not load 'ies.jpeg'");
   if (fairImage == null)   println("Could not load 'feria.jpg'");
+  if (githubLogo == null)  println("Could not load 'github.png'");
   
   // Setup the serial port
   setupSerialPort();
@@ -184,19 +193,15 @@ void drawRadar() {
 void drawSensorLine() {
   pushMatrix();
   translate(width/2, height - height*0.074);
-  // Removed the horizontal mirroring
   strokeWeight(LINE_STROKE_WEIGHT);
   stroke(LINE_COLOR);
   
-  // Calculate radar diameter and radius based on the grid
   float radarDiameter = width - width * 0.0625;
   float radarRadius = radarDiameter / 2.0;
   
-  // Limit the sensor reading to MAX_DISTANCE and convert to pixels
   float limitedDistance = min(sensorDistance, MAX_DISTANCE);
   float sensorLineLength = limitedDistance * (radarRadius / MAX_DISTANCE);
   
-  // Draw the sensor line using sensorAngle and calculated length
   line(0, 0, sensorLineLength * cos(radians(sensorAngle)), -sensorLineLength * sin(radians(sensorAngle)));
   popMatrix();
 }
@@ -205,32 +210,26 @@ void drawSensorLine() {
 void drawObjectLine() {
   pushMatrix();
   translate(width/2, height - height*0.074);
-  // Removed the horizontal mirroring
   strokeWeight(LINE_STROKE_WEIGHT);
   stroke(OBJECT_COLOR);
   
-  // Calculate radar diameter and radius (same as in drawSensorLine)
   float radarDiameter = width - width * 0.0625;
   float radarRadius = radarDiameter / 2.0;
   
-  // Limit the sensor reading to MAX_DISTANCE and convert to pixels
   float limitedDistance = min(sensorDistance, MAX_DISTANCE);
   float sensorPixelDistance = limitedDistance * (radarRadius / MAX_DISTANCE);
   
   if (sensorDistance < MAX_DISTANCE) {
-    // Draw the red line from the sensor reading to the edge of the radar grid
     line(sensorPixelDistance * cos(radians(sensorAngle)), -sensorPixelDistance * sin(radians(sensorAngle)),
          radarRadius * cos(radians(sensorAngle)), -radarRadius * sin(radians(sensorAngle)));
   }
   popMatrix();
 }
 
-
 /* Draws text information and angle labels */
 void drawInfoText() {
   pushMatrix();
   
-  // Determine sensor status based on distance
   String sensorStatus;
   if (sensorDistance > MAX_DISTANCE) {
     sensorStatus = "Out of Range";
@@ -238,12 +237,10 @@ void drawInfoText() {
     sensorStatus = "In Range";
   }
   
-  // Background for text
   fill(0);
   noStroke();
   rect(0, height - height * 0.0648, width, height);
   
-  // Display sensor data and distance scales
   fill(TEXT_COLOR);
   textSize(TEXT_SIZE_SMALL);
   text(int(MAX_DISTANCE / 4) + "cm", width - width * 0.3854, height - height * 0.0833);
@@ -284,7 +281,7 @@ void drawAngleLabel(String label, float baseAngle, float xOffsetFactor, float yO
 
 /* Draws the legend with version and instructions */
 void drawLegend() {
-  fill(0, 150);       // Semi-transparent background
+  fill(0, 150);
   noStroke();
   rect(10, 10, 220, 40);
   fill(255);
@@ -298,88 +295,123 @@ void drawStatusIndicator() {
   String statusText;
   color statusColor;
   
-  // Determine status based on sensor distance thresholds
   if (sensorDistance > SAFE_DISTANCE) {
-    statusText = "Safe";
-    statusColor = color(0, 255, 0);  // Green
+    statusText = "Seguro";
+    statusColor = color(0, 255, 0);
   } else if (sensorDistance > WARNING_DISTANCE) {
-    statusText = "Warning";
-    statusColor = color(255, 255, 0);  // Yellow
+    statusText = "Peligro";
+    statusColor = color(255, 255, 0);
   } else {
-    statusText = "Danger";
-    statusColor = color(255, 0, 0);  // Red
+    statusText = "Alerta";
+    statusColor = color(255, 0, 0);
   }
   
-  // Dimensions and position for the status rectangle
   int rectWidth = 300;
   int rectHeight = 70;
   int rectX = width/2 - rectWidth/2;
   int rectY = 20;
   
-  // Draw background with transparency and rounded corners
   noStroke();
   fill(0, 150);
   rect(rectX, rectY, rectWidth, rectHeight, 10);
   
-  // Draw the centered status text
   textAlign(CENTER, CENTER);
   textSize(40);
   fill(statusColor);
   text(statusText, width/2, rectY + rectHeight/2);
 }
 
-/* Draws the menu screen */
+/* Draws the improved menu screen with logos and GitHub link,
+   enlarged slightly and with extra space between the logo and the top */
 void drawMenu() {
   background(50);  // Dark gray background
   textAlign(CENTER, CENTER);
   
-  // Title
-  textSize(40);
+  // Extra top margin for the image
+  int menuTopMargin = 40;
+  
+  // Enlarged menu title (frontend text remains in Spanish)
+  textSize(50);
   fill(255);
-  text("Radar Menu", width/2, height/4);
+  text("SONAR v0.2", width/2, height/4 + menuTopMargin);
   
-  // Button dimensions
-  int buttonWidth = 200;
-  int buttonHeight = 50;
+  // Display project logo with extra space from the top (commented out; enable if desired)
+  /*if (schoolLogo != null) {
+    int logoWidth = 350;
+    int logoHeight = int(schoolLogo.height * (logoWidth / (float)schoolLogo.width));
+    // Position the logo with a top margin
+    image(schoolLogo, width/2 - logoWidth/2, menuTopMargin, logoWidth, logoHeight);
+  }*/
   
-  // Start button
+  // Enlarged "Start Radar" button (frontend text remains in Spanish)
+  int buttonWidth = 220;
+  int buttonHeight = 60;
   int startX = width/2 - buttonWidth/2;
   int startY = height/2 - buttonHeight - 10;
   fill(100, 150, 255);
   rect(startX, startY, buttonWidth, buttonHeight, 10);
   fill(255);
-  textSize(24);
-  text("Start Radar", width/2, startY + buttonHeight/2);
+  textSize(28);
+  text("Iniciar", width/2, startY + buttonHeight/2);
   
-  // Exit button
+  // Enlarged "Exit" button (frontend text remains in Spanish)
   int exitX = width/2 - buttonWidth/2;
   int exitY = height/2 + 10;
   fill(255, 100, 100);
   rect(exitX, exitY, buttonWidth, buttonHeight, 10);
   fill(255);
-  text("Exit", width/2, exitY + buttonHeight/2);
+  text("Salir", width/2, exitY + buttonHeight/2);
+  
+  // GitHub button in the bottom right (remains the same)
+  int ghButtonSize = 80;
+  int ghX = width - ghButtonSize - 20;
+  int ghY = height - ghButtonSize - 20;
+  if (githubLogo != null) {
+    image(githubLogo, ghX, ghY, ghButtonSize, ghButtonSize);
+  } else {
+    fill(200);
+    rect(ghX, ghY, ghButtonSize, ghButtonSize, 10);
+    fill(0);
+    textSize(12);
+    text("GitHub", ghX + ghButtonSize/2, ghY + ghButtonSize/2);
+  }
+  
+  textSize(16);
+  fill(255);
+  text("Ver en GitHub", width - ghButtonSize/2 - 20, ghY - 10);
 }
 
-/* Handles mouse presses for the menu */
+/* Handles mouse presses for the menu and GitHub link */
 void mousePressed() {
   if (showMenu) {
-    int buttonWidth = 200;
-    int buttonHeight = 50;
+    int buttonWidth = 220;
+    int buttonHeight = 60;
     int startX = width/2 - buttonWidth/2;
     int startY = height/2 - buttonHeight - 10;
     int exitX = width/2 - buttonWidth/2;
     int exitY = height/2 + 10;
     
-    // Check if mouse is over the Start button
+    // If the "Start Radar" button is clicked
     if (mouseX > startX && mouseX < startX + buttonWidth &&
         mouseY > startY && mouseY < startY + buttonHeight) {
-      showMenu = false;  // Start the radar display
+      showMenu = false;
+      return;
     }
     
-    // Check if mouse is over the Exit button
+    // If the "Exit" button is clicked
     if (mouseX > exitX && mouseX < exitX + buttonWidth &&
         mouseY > exitY && mouseY < exitY + buttonHeight) {
       exit();
+      return;
+    }
+    
+    // If the GitHub button is clicked
+    int ghButtonSize = 60;
+    int ghX = width - ghButtonSize - 20;
+    int ghY = height - ghButtonSize - 20;
+    if (mouseX > ghX && mouseX < ghX + ghButtonSize &&
+        mouseY > ghY && mouseY < ghY + ghButtonSize) {
+      openLink(GITHUB_URL);
     }
   }
 }
@@ -388,5 +420,14 @@ void mousePressed() {
 void keyPressed() {
   if (key == ESC) {
     exit();
+  }
+}
+
+/* Opens the given URL in the default web browser */
+void openLink(String url) {
+  try {
+    Desktop.getDesktop().browse(new URI(url));
+  } catch (Exception e) {
+    println("Error opening URL: " + e.getMessage());
   }
 }
