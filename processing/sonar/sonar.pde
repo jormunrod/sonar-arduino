@@ -21,6 +21,10 @@ color TEXT_COLOR = RADAR_COLOR;
 // New GitHub repository URL
 final String GITHUB_URL = "https://github.com/jormunrod/sonar-arduino";
 
+// Application version and last update date
+final String APP_VERSION = "SONAR v0.2";
+final String APP_LAST_UPDATE = "23/03/2025";
+
 import processing.serial.*;
 import java.awt.Desktop;
 import java.net.URI;
@@ -39,9 +43,13 @@ int sensorDistance = 0;
 // Global variable to toggle the menu
 boolean showMenu = true;
 
+// Global variable to store the connected Arduino port
+String arduinoPort = "";
+
 void setup() {
   // Set an initial window size and make it resizable
   size(800, 600);           // Adjust dimensions as needed
+  surface.setTitle(APP_VERSION);  // Set the application name in the title bar
   surface.setResizable(true);
   smooth();
   
@@ -80,9 +88,6 @@ void draw() {
 
     // Draw the status indicator at the top center
     drawStatusIndicator();
-
-    // Draw legend (version and instructions)
-    drawLegend();
   }
 }
 
@@ -123,6 +128,7 @@ void setupSerialPort() {
       myPort = new Serial(this, selectedPort, SERIAL_BAUD);
       myPort.bufferUntil('.');
       println("Serial port opened on: " + selectedPort);
+      arduinoPort = selectedPort;  // Store the connected port name
     } catch(Exception e) {
       println("Error opening serial port: " + e.getMessage());
     }
@@ -279,17 +285,6 @@ void drawAngleLabel(String label, float baseAngle, float xOffsetFactor, float yO
   popMatrix();
 }
 
-/* Draws the legend with version and instructions */
-void drawLegend() {
-  fill(0, 150);
-  noStroke();
-  rect(10, 10, 220, 40);
-  fill(255);
-  textSize(TEXT_SIZE_SMALL);
-  text("Version: 0.1", 20, 30);
-  text("Press ESC to exit", 20, 50);
-}
-
 /* Draws a visual status indicator at the top center */
 void drawStatusIndicator() {
   String statusText;
@@ -321,13 +316,13 @@ void drawStatusIndicator() {
   text(statusText, width/2, rectY + rectHeight/2);
 }
 
-/* Draws the improved menu screen with logos and GitHub link,
+/* Draws the improved menu screen with logos, GitHub link, and status info,
    enlarged slightly and with extra space between the logo and the top */
 void drawMenu() {
   background(50);  // Dark gray background
   textAlign(CENTER, CENTER);
   
-  // Extra top margin for the image
+  // Extra top margin for the menu elements
   int menuTopMargin = 40;
   
   // Enlarged menu title (frontend text remains in Spanish)
@@ -335,13 +330,15 @@ void drawMenu() {
   fill(255);
   text("SONAR v0.2", width/2, height/4 + menuTopMargin);
   
-  // Display project logo with extra space from the top (commented out; enable if desired)
-  /*if (schoolLogo != null) {
-    int logoWidth = 350;
-    int logoHeight = int(schoolLogo.height * (logoWidth / (float)schoolLogo.width));
-    // Position the logo with a top margin
-    image(schoolLogo, width/2 - logoWidth/2, menuTopMargin, logoWidth, logoHeight);
-  }*/
+  // Display Arduino connection status and last version info
+  textSize(16);
+  fill(255);
+  if (arduinoPort != null && arduinoPort.length() > 0) {
+    text("Arduino conectado en el puerto: " + arduinoPort, width/2, height/4 + menuTopMargin + 60);
+  } else {
+    text("Arduino no conectado", width/2, height/4 + menuTopMargin + 60);
+  }
+  text("Última versión: " + APP_LAST_UPDATE, width/2, height/4 + menuTopMargin + 80);
   
   // Enlarged "Start Radar" button (frontend text remains in Spanish)
   int buttonWidth = 220;
