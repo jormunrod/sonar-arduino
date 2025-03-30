@@ -22,8 +22,8 @@ color TEXT_COLOR = RADAR_COLOR;
 final String GITHUB_URL = "https://github.com/jormunrod/sonar-arduino";
 
 // Application version and last update date
-final String APP_VERSION = "SONAR v0.2";
-final String APP_LAST_UPDATE = "23/03/2025";
+final String APP_VERSION = "SONAR v0.3";
+final String APP_LAST_UPDATE = "30/03/2025";
 
 import processing.serial.*;
 import java.awt.Desktop;
@@ -320,133 +320,137 @@ void drawStatusIndicator() {
 /* Draws the improved menu screen with logos, GitHub link, and status info,
    enlarged slightly and with extra space between the logo and the top */
 void drawMenu() {
-  background(50);  // Dark gray background
+  float scaleFactor = width / 800.0;
+  background(50);
   textAlign(CENTER, CENTER);
   
-  // Extra top margin for the menu elements
-  int menuTopMargin = 40;
-  
-  // Enlarged menu title (frontend text remains in Spanish)
-  textSize(50);
+  int menuTopMargin = int(40 * scaleFactor);
+  int titleSize = int(50 * scaleFactor);
+  textSize(titleSize);
   fill(255);
+  // Title at the top
   text("SONAR v0.2", width/2, height/4 + menuTopMargin);
   
-  // Display Arduino connection status and last version info
-  textSize(16);
-  fill(255);
-  if (arduinoPort != null && arduinoPort.length() > 0) {
-    text("Arduino conectado en el puerto: " + arduinoPort, width/2, height/4 + menuTopMargin + 60);
-  } else {
-    text("Arduino no conectado", width/2, height/4 + menuTopMargin + 60);
-  }
-  text("Última versión: " + APP_LAST_UPDATE, width/2, height/4 + menuTopMargin + 80);
-  
-  // Enlarged "Start Radar" button (frontend text remains in Spanish)
-  int buttonWidth = 220;
-  int buttonHeight = 60;
+  // Main buttons in the center
+  int buttonWidth = int(220 * scaleFactor);
+  int buttonHeight = int(60 * scaleFactor);
   int startX = width/2 - buttonWidth/2;
-  int startY = height/2 - buttonHeight - 10;
+  int startY = height/2 - buttonHeight - int(10 * scaleFactor);
   fill(100, 150, 255);
-  rect(startX, startY, buttonWidth, buttonHeight, 10);
+  rect(startX, startY, buttonWidth, buttonHeight, int(10 * scaleFactor));
   fill(255);
-  textSize(28);
+  textSize(int(28 * scaleFactor));
   text("Iniciar", width/2, startY + buttonHeight/2);
   
-  // Enlarged "Exit" button (frontend text remains in Spanish)
   int exitX = width/2 - buttonWidth/2;
-  int exitY = height/2 + 10;
+  int exitY = height/2 + int(10 * scaleFactor);
   fill(255, 100, 100);
-  rect(exitX, exitY, buttonWidth, buttonHeight, 10);
+  rect(exitX, exitY, buttonWidth, buttonHeight, int(10 * scaleFactor));
   fill(255);
   text("Salir", width/2, exitY + buttonHeight/2);
   
-  // GitHub button in the bottom right (remains the same)
-  int ghButtonSize = 80;
-  int ghX = width - ghButtonSize - 20;
-  int ghY = height - ghButtonSize - 20;
+  // Adjustment buttons (Increase/Decrease)
+  int adjButtonWidth = int(150 * scaleFactor);
+  int adjButtonHeight = int(60 * scaleFactor);
+  int incButtonX = width/2 - adjButtonWidth - int(10 * scaleFactor);
+  int decButtonX = width/2 + int(10 * scaleFactor);
+  int adjButtonY = exitY + buttonHeight + int(20 * scaleFactor);
+  fill(100, 150, 255);
+  rect(incButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, int(10 * scaleFactor));
+  fill(255);
+  textSize(int(18 * scaleFactor));
+  text("Aumentar", incButtonX + adjButtonWidth/2, adjButtonY + adjButtonHeight/2);
+  
+  fill(255, 100, 100);
+  rect(decButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, int(10 * scaleFactor));
+  fill(255);
+  text("Reducir", decButtonX + adjButtonWidth/2, adjButtonY + adjButtonHeight/2);
+  
+  // Arduino connection info below the adjustment buttons
+  int infoSize = int(16 * scaleFactor);
+  textSize(infoSize);
+  fill(255);
+  int infoY = adjButtonY + adjButtonHeight + int(40 * scaleFactor);
+  if (arduinoPort != null && arduinoPort.length() > 0) {
+    text("Arduino connected on port: " + arduinoPort, width/2, infoY);
+  } else {
+    text("Arduino not connected", width/2, infoY);
+  }
+  text("Latest version: " + APP_LAST_UPDATE, width/2, infoY + int(20 * scaleFactor));
+  
+  // GitHub button and its label remain unchanged
+  int ghButtonSize = int(80 * scaleFactor);
+  int ghX = width - ghButtonSize - int(20 * scaleFactor);
+  int ghY = height - ghButtonSize - int(20 * scaleFactor);
   if (githubLogo != null) {
     image(githubLogo, ghX, ghY, ghButtonSize, ghButtonSize);
   } else {
     fill(200);
-    rect(ghX, ghY, ghButtonSize, ghButtonSize, 10);
+    rect(ghX, ghY, ghButtonSize, ghButtonSize, int(10 * scaleFactor));
     fill(0);
-    textSize(12);
+    textSize(int(12 * scaleFactor));
     text("GitHub", ghX + ghButtonSize/2, ghY + ghButtonSize/2);
   }
-  
-  textSize(16);
+  textSize(infoSize);
   fill(255);
-  text("Ver en GitHub", width - ghButtonSize/2 - 20, ghY - 10);
-  
-  int adjButtonWidth = 150;
-  int adjButtonHeight = 60;
-  int incButtonX = width/2 - adjButtonWidth - 10;
-  int decButtonX = width/2 + 10;
-  int adjButtonY = exitY + buttonHeight + 20;
-  
-  fill(100, 150, 255);
-  rect(incButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, 10);
-  fill(255);
-  textSize(18);
-  text("Aumentar", incButtonX + adjButtonWidth/2, adjButtonY + adjButtonHeight/2);
-  
-  fill(255, 100, 100);
-  rect(decButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, 10);
-  fill(255);
-  text("Reducir", decButtonX + adjButtonWidth/2, adjButtonY + adjButtonHeight/2);
+  text("View on GitHub", width - ghButtonSize/2 - int(20 * scaleFactor), ghY - int(10 * scaleFactor));
 }
 
 /* Handles mouse presses for the menu and GitHub link */
 void mousePressed() {
   if (showMenu) {
-    int buttonWidth = 220;
-    int buttonHeight = 60;
+    float scaleFactor = width / 800.0;
+    int buttonWidth = int(220 * scaleFactor);
+    int buttonHeight = int(60 * scaleFactor);
     int startX = width/2 - buttonWidth/2;
-    int startY = height/2 - buttonHeight - 10;
+    int startY = height/2 - buttonHeight - int(10 * scaleFactor);
     int exitX = width/2 - buttonWidth/2;
-    int exitY = height/2 + 10;
+    int exitY = height/2 + int(10 * scaleFactor);
     
-    // If the "Start Radar" button is clicked
+    // "Start" button
     if (mouseX > startX && mouseX < startX + buttonWidth &&
         mouseY > startY && mouseY < startY + buttonHeight) {
       showMenu = false;
       return;
     }
-    
-    // If the "Exit" button is clicked
+    // "Exit" button
     if (mouseX > exitX && mouseX < exitX + buttonWidth &&
         mouseY > exitY && mouseY < exitY + buttonHeight) {
       exit();
       return;
     }
     
-    // If the GitHub button is clicked
-    int ghButtonSize = 60;
-    int ghX = width - ghButtonSize - 20;
-    int ghY = height - ghButtonSize - 20;
+    // GitHub button
+    int ghButtonSize = int(60 * scaleFactor);
+    int ghX = width - ghButtonSize - int(20 * scaleFactor);
+    int ghY = height - ghButtonSize - int(20 * scaleFactor);
     if (mouseX > ghX && mouseX < ghX + ghButtonSize &&
         mouseY > ghY && mouseY < ghY + ghButtonSize) {
       openLink(GITHUB_URL);
       return;
     }
     
-    int adjButtonWidth = 150;
-    int adjButtonHeight = 60;
-    int incButtonX = width/2 - adjButtonWidth - 10;
-    int decButtonX = width/2 + 10;
-    int adjButtonY = exitY + buttonHeight + 20;
+    // Adjustment buttons
+    int adjButtonWidth = int(150 * scaleFactor);
+    int adjButtonHeight = int(60 * scaleFactor);
+    int incButtonX = width/2 - adjButtonWidth - int(10 * scaleFactor);
+    int decButtonX = width/2 + int(10 * scaleFactor);
+    int adjButtonY = exitY + buttonHeight + int(20 * scaleFactor);
     if (mouseX > incButtonX && mouseX < incButtonX + adjButtonWidth &&
         mouseY > adjButtonY && mouseY < adjButtonY + adjButtonHeight) {
-      surface.setSize(width + 100, height + 75);
+      surface.setSize(width + int(100 * scaleFactor), height + int(75 * scaleFactor));
       return;
     }
     if (mouseX > decButtonX && mouseX < decButtonX + adjButtonWidth &&
         mouseY > adjButtonY && mouseY < adjButtonY + adjButtonHeight) {
-      int newWidth = max(width - 100, 400);
-      int newHeight = max(height - 75, 300);
+      int newWidth = max(width - int(100 * scaleFactor), int(400 * scaleFactor));
+      int newHeight = max(height - int(75 * scaleFactor), int(300 * scaleFactor));
       surface.setSize(newWidth, newHeight);
       return;
     }
+  }
+  if (key == ESC) {
+    exit();
   }
 }
 
