@@ -68,6 +68,7 @@ void setup() {
 
 void draw() {
   if (showMenu) {
+    updateSerialConnection(); // <-- added to update Arduino connection live
     drawMenu();
   } else {
     // Draw scaled images in the corners
@@ -462,5 +463,39 @@ void openLink(String url) {
     Desktop.getDesktop().browse(new URI(url));
   } catch (Exception e) {
     println("Error opening URL: " + e.getMessage());
+  }
+}
+
+// Add the following function at the end of the file:
+void updateSerialConnection() {
+  String[] ports = Serial.list();
+  boolean currentPortFound = false;
+  for (int i = 0; i < ports.length; i++) {
+    if (!arduinoPort.equals("") && ports[i].equals(arduinoPort)) {
+      currentPortFound = true;
+      break;
+    }
+  }
+  if (!currentPortFound) {
+    if (myPort != null) {
+      myPort.stop();
+      myPort = null;
+    }
+    arduinoPort = "";
+    for (int i = 0; i < ports.length; i++) {
+      for (String pattern : PORT_PATTERNS) {
+        if (ports[i].indexOf(pattern) != -1) {
+          try {
+            myPort = new Serial(this, ports[i], SERIAL_BAUD);
+            myPort.bufferUntil('.');
+            arduinoPort = ports[i];
+            println("Serial port reconnected on: " + ports[i]);
+            return;
+          } catch(Exception e) {
+            println("Error reconnecting serial port: " + e.getMessage());
+          }
+        }
+      }
+    }
   }
 }
