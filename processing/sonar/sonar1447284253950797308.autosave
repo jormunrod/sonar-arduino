@@ -70,7 +70,6 @@ void draw() {
   if (showMenu) {
     drawMenu();
   } else {
-    // Draw scaled images in the corners
     drawScaledImage(schoolLogo, IMAGE_SCALE, false);  // Left
     drawScaledImage(fairImage, IMAGE_SCALE, true);      // Right
 
@@ -376,23 +375,6 @@ void drawMenu() {
   textSize(16);
   fill(255);
   text("Ver en GitHub", width - ghButtonSize/2 - 20, ghY - 10);
-  
-  int adjButtonWidth = 150;
-  int adjButtonHeight = 60;
-  int incButtonX = width/2 - adjButtonWidth - 10;
-  int decButtonX = width/2 + 10;
-  int adjButtonY = exitY + buttonHeight + 20;
-  
-  fill(100, 150, 255);
-  rect(incButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, 10);
-  fill(255);
-  textSize(18);
-  text("Aumentar", incButtonX + adjButtonWidth/2, adjButtonY + adjButtonHeight/2);
-  
-  fill(255, 100, 100);
-  rect(decButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, 10);
-  fill(255);
-  text("Reducir", decButtonX + adjButtonWidth/2, adjButtonY + adjButtonHeight/2);
 }
 
 /* Handles mouse presses for the menu and GitHub link */
@@ -426,25 +408,6 @@ void mousePressed() {
     if (mouseX > ghX && mouseX < ghX + ghButtonSize &&
         mouseY > ghY && mouseY < ghY + ghButtonSize) {
       openLink(GITHUB_URL);
-      return;
-    }
-    
-    int adjButtonWidth = 150;
-    int adjButtonHeight = 60;
-    int incButtonX = width/2 - adjButtonWidth - 10;
-    int decButtonX = width/2 + 10;
-    int adjButtonY = exitY + buttonHeight + 20;
-    if (mouseX > incButtonX && mouseX < incButtonX + adjButtonWidth &&
-        mouseY > adjButtonY && mouseY < adjButtonY + adjButtonHeight) {
-      surface.setSize(width + 100, height + 75);
-      return;
-    }
-    if (mouseX > decButtonX && mouseX < decButtonX + adjButtonWidth &&
-        mouseY > adjButtonY && mouseY < adjButtonY + adjButtonHeight) {
-      int newWidth = max(width - 100, 400);
-      int newHeight = max(height - 75, 300);
-      surface.setSize(newWidth, newHeight);
-      return;
     }
   }
 }
