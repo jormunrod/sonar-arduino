@@ -1,6 +1,7 @@
 /* CONFIGURABLE VARIABLES */
 final int MAX_DISTANCE = 70;         // Maximum distance in cm (adjustable for the radar)
-final float IMAGE_SCALE = 0.1;         // Fraction of screen width for the image
+final float IMAGE_SCALE = 0.;         // Fraction of screen width for the logo on the left, temporally disabled
+final float FAIR_IMAGE_SCALE = 0.27;    // Fraction of screen width for the fair image on the right (increased)
 final int SERIAL_BAUD = 9600;
 final String[] PORT_PATTERNS = {"ttyUSB", "ttyACM"};
 final int RADAR_STROKE_WEIGHT = 2;
@@ -22,8 +23,8 @@ color TEXT_COLOR = RADAR_COLOR;
 final String GITHUB_URL = "https://github.com/jormunrod/sonar-arduino";
 
 // Application version and last update date
-final String APP_VERSION = "SONAR v0.3";
-final String APP_LAST_UPDATE = "30/03/2025";
+final String APP_VERSION = "SONAR v1.0";
+final String APP_LAST_UPDATE = "20/04/2025";
 
 import processing.serial.*;
 import java.awt.Desktop;
@@ -47,19 +48,19 @@ boolean showMenu = true;
 String arduinoPort = "";
 
 void setup() {
-  // Set an initial window size and make it resizable
-  size(800, 600);           // Adjust dimensions as needed
-  surface.setTitle(APP_VERSION);  // Set the application name in the title bar
+  // Adapt window to 1920x1080 and make it resizable
+  size(1920, 1080);
+  surface.setTitle(APP_VERSION);
   surface.setResizable(true);
   smooth();
   
   // Load images from the "data" folder
   schoolLogo = loadImage("ies.jpeg");
-  fairImage  = loadImage("feria.jpg");
+  fairImage  = loadImage("logo_white.png");
   githubLogo = loadImage("github.png");
   
   if (schoolLogo == null)  println("Could not load 'ies.jpeg'");
-  if (fairImage == null)   println("Could not load 'feria.jpg'");
+  if (fairImage == null)   println("Could not load 'logo_white.png'");
   if (githubLogo == null)  println("Could not load 'github.png'");
   
   // Setup the serial port
@@ -72,9 +73,9 @@ void draw() {
     drawMenu();
   } else {
     // Draw scaled images in the corners
-    drawScaledImage(schoolLogo, IMAGE_SCALE, false);  // Left
-    drawScaledImage(fairImage, IMAGE_SCALE, true);      // Right
-
+    drawScaledImage(schoolLogo, IMAGE_SCALE, false);        // Left: logo (small)
+    drawScaledImage(fairImage, FAIR_IMAGE_SCALE, true);     // Right: fair image (larger)
+    
     // Fade/blur effect: semi-transparent rectangle over the background
     noStroke();
     fill(0, 4);
@@ -99,9 +100,9 @@ void drawScaledImage(PImage img, float scaleFactor, boolean alignRight) {
   int newWidth  = int(width * scaleFactor);
   int newHeight = int(img.height * (newWidth / (float)img.width));
   if (alignRight) {
-    image(img, width - newWidth, 0, newWidth, newHeight);
+    image(img, width - newWidth - 20, 20, newWidth, newHeight); // 20px margin from corner
   } else {
-    image(img, 0, 0, newWidth, newHeight);
+    image(img, 20, 20, newWidth, newHeight); // 20px margin from corner
   }
 }
 
@@ -208,8 +209,11 @@ void drawSensorLine() {
   
   float limitedDistance = min(sensorDistance, MAX_DISTANCE);
   float sensorLineLength = limitedDistance * (radarRadius / MAX_DISTANCE);
+
+  // INVERT ANGLE for correct orientation (mirror horizontally)
+  float displayAngle = 180 - sensorAngle;
   
-  line(0, 0, sensorLineLength * cos(radians(sensorAngle)), -sensorLineLength * sin(radians(sensorAngle)));
+  line(0, 0, sensorLineLength * cos(radians(displayAngle)), -sensorLineLength * sin(radians(displayAngle)));
   popMatrix();
 }
 
@@ -225,10 +229,13 @@ void drawObjectLine() {
   
   float limitedDistance = min(sensorDistance, MAX_DISTANCE);
   float sensorPixelDistance = limitedDistance * (radarRadius / MAX_DISTANCE);
+
+  // INVERT ANGLE for correct orientation (mirror horizontally)
+  float displayAngle = 180 - sensorAngle;
   
   if (sensorDistance < MAX_DISTANCE) {
-    line(sensorPixelDistance * cos(radians(sensorAngle)), -sensorPixelDistance * sin(radians(sensorAngle)),
-         radarRadius * cos(radians(sensorAngle)), -radarRadius * sin(radians(sensorAngle)));
+    line(sensorPixelDistance * cos(radians(displayAngle)), -sensorPixelDistance * sin(radians(displayAngle)),
+         radarRadius * cos(radians(displayAngle)), -radarRadius * sin(radians(displayAngle)));
   }
   popMatrix();
 }
@@ -278,8 +285,10 @@ void drawInfoText() {
 /* Helper function to draw angle labels */
 void drawAngleLabel(String label, float baseAngle, float xOffsetFactor, float yOffsetFactor, float rotationAngle) {
   pushMatrix();
-  float tx = (width - width * xOffsetFactor) + (width / 2) * cos(radians(baseAngle));
-  float ty = (height - height * yOffsetFactor) - (width / 2) * sin(radians(baseAngle));
+  // Invert angle for mirrored radar
+  float displayAngle = 180 - baseAngle;
+  float tx = (width - width * xOffsetFactor) + (width / 2) * cos(radians(displayAngle));
+  float ty = (height - height * yOffsetFactor) - (width / 2) * sin(radians(displayAngle));
   translate(tx, ty);
   rotate(rotationAngle);
   text(label, 0, 0);
@@ -302,10 +311,10 @@ void drawStatusIndicator() {
     statusColor = color(255, 0, 0);
   }
   
-  int rectWidth = 300;
-  int rectHeight = 70;
+  int rectWidth = int(width * 0.156); // ~300px for 1920 width
+  int rectHeight = int(height * 0.064); // ~70px for 1080 height
   int rectX = width/2 - rectWidth/2;
-  int rectY = 20;
+  int rectY = int(height * 0.02);
   
   noStroke();
   fill(0, 150);
@@ -320,92 +329,92 @@ void drawStatusIndicator() {
 /* Draws the improved menu screen with logos, GitHub link, and status info,
    enlarged slightly and with extra space between the logo and the top */
 void drawMenu() {
-  float scaleFactor = width / 800.0;
+  float scaleFactor = width / 1920.0;
   background(50);
   textAlign(CENTER, CENTER);
   
-  int menuTopMargin = int(40 * scaleFactor);
-  int titleSize = int(50 * scaleFactor);
+  int menuTopMargin = int(80 * scaleFactor);
+  int titleSize = int(100 * scaleFactor);
   textSize(titleSize);
   fill(255);
   // Title at the top
-  text("SONAR v0.2", width/2, height/4 + menuTopMargin);
+  text("SONAR v1.0", width/2, height/4 + menuTopMargin);
   
   // Main buttons in the center
-  int buttonWidth = int(220 * scaleFactor);
-  int buttonHeight = int(60 * scaleFactor);
+  int buttonWidth = int(350 * scaleFactor);
+  int buttonHeight = int(100 * scaleFactor);
   int startX = width/2 - buttonWidth/2;
-  int startY = height/2 - buttonHeight - int(10 * scaleFactor);
+  int startY = height/2 - buttonHeight - int(30 * scaleFactor);
   fill(100, 150, 255);
-  rect(startX, startY, buttonWidth, buttonHeight, int(10 * scaleFactor));
+  rect(startX, startY, buttonWidth, buttonHeight, int(20 * scaleFactor));
   fill(255);
-  textSize(int(28 * scaleFactor));
+  textSize(int(45 * scaleFactor));
   text("Iniciar", width/2, startY + buttonHeight/2);
   
   int exitX = width/2 - buttonWidth/2;
-  int exitY = height/2 + int(10 * scaleFactor);
+  int exitY = height/2 + int(30 * scaleFactor);
   fill(255, 100, 100);
-  rect(exitX, exitY, buttonWidth, buttonHeight, int(10 * scaleFactor));
+  rect(exitX, exitY, buttonWidth, buttonHeight, int(20 * scaleFactor));
   fill(255);
   text("Salir", width/2, exitY + buttonHeight/2);
   
   // Adjustment buttons (Increase/Decrease)
-  int adjButtonWidth = int(150 * scaleFactor);
-  int adjButtonHeight = int(60 * scaleFactor);
-  int incButtonX = width/2 - adjButtonWidth - int(10 * scaleFactor);
-  int decButtonX = width/2 + int(10 * scaleFactor);
-  int adjButtonY = exitY + buttonHeight + int(20 * scaleFactor);
+  int adjButtonWidth = int(280 * scaleFactor);
+  int adjButtonHeight = int(100 * scaleFactor);
+  int incButtonX = width/2 - adjButtonWidth - int(20 * scaleFactor);
+  int decButtonX = width/2 + int(20 * scaleFactor);
+  int adjButtonY = exitY + buttonHeight + int(50 * scaleFactor);
   fill(100, 150, 255);
-  rect(incButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, int(10 * scaleFactor));
+  rect(incButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, int(20 * scaleFactor));
   fill(255);
-  textSize(int(18 * scaleFactor));
+  textSize(int(34 * scaleFactor));
   text("Aumentar", incButtonX + adjButtonWidth/2, adjButtonY + adjButtonHeight/2);
   
   fill(255, 100, 100);
-  rect(decButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, int(10 * scaleFactor));
+  rect(decButtonX, adjButtonY, adjButtonWidth, adjButtonHeight, int(20 * scaleFactor));
   fill(255);
   text("Reducir", decButtonX + adjButtonWidth/2, adjButtonY + adjButtonHeight/2);
   
   // Arduino connection info below the adjustment buttons
-  int infoSize = int(16 * scaleFactor);
+  int infoSize = int(26 * scaleFactor);
   textSize(infoSize);
   fill(255);
-  int infoY = adjButtonY + adjButtonHeight + int(40 * scaleFactor);
+  int infoY = adjButtonY + adjButtonHeight + int(60 * scaleFactor);
   if (arduinoPort != null && arduinoPort.length() > 0) {
     text("Arduino connected on port: " + arduinoPort, width/2, infoY);
   } else {
     text("Arduino not connected", width/2, infoY);
   }
-  text("Latest version: " + APP_LAST_UPDATE, width/2, infoY + int(20 * scaleFactor));
+  text("Latest version: " + APP_LAST_UPDATE, width/2, infoY + int(40 * scaleFactor));
   
-  // GitHub button and its label remain unchanged
-  int ghButtonSize = int(80 * scaleFactor);
-  int ghX = width - ghButtonSize - int(20 * scaleFactor);
-  int ghY = height - ghButtonSize - int(20 * scaleFactor);
+  // GitHub button and its label
+  int ghButtonSize = int(120 * scaleFactor);
+  int ghX = width - ghButtonSize - int(40 * scaleFactor);
+  int ghY = height - ghButtonSize - int(40 * scaleFactor);
   if (githubLogo != null) {
     image(githubLogo, ghX, ghY, ghButtonSize, ghButtonSize);
   } else {
     fill(200);
     rect(ghX, ghY, ghButtonSize, ghButtonSize, int(10 * scaleFactor));
     fill(0);
-    textSize(int(12 * scaleFactor));
+    textSize(int(22 * scaleFactor));
     text("GitHub", ghX + ghButtonSize/2, ghY + ghButtonSize/2);
   }
   textSize(infoSize);
   fill(255);
-  text("View on GitHub", width - ghButtonSize/2 - int(20 * scaleFactor), ghY - int(10 * scaleFactor));
+  text("View on GitHub", width - ghButtonSize/2 - int(40 * scaleFactor), ghY - int(20 * scaleFactor));
 }
 
 /* Handles mouse presses for the menu and GitHub link */
 void mousePressed() {
   if (showMenu) {
-    float scaleFactor = width / 800.0;
-    int buttonWidth = int(220 * scaleFactor);
-    int buttonHeight = int(60 * scaleFactor);
+    float scaleFactor = width / 1920.0;
+    int buttonWidth = int(350 * scaleFactor);
+    int buttonHeight = int(100 * scaleFactor);
     int startX = width/2 - buttonWidth/2;
-    int startY = height/2 - buttonHeight - int(10 * scaleFactor);
+    int startY = height/2 - buttonHeight - int(30 * scaleFactor);
     int exitX = width/2 - buttonWidth/2;
-    int exitY = height/2 + int(10 * scaleFactor);
+    int exitY = height/2 + int(30 * scaleFactor);
     
     // "Start" button
     if (mouseX > startX && mouseX < startX + buttonWidth &&
@@ -421,9 +430,9 @@ void mousePressed() {
     }
     
     // GitHub button
-    int ghButtonSize = int(60 * scaleFactor);
-    int ghX = width - ghButtonSize - int(20 * scaleFactor);
-    int ghY = height - ghButtonSize - int(20 * scaleFactor);
+    int ghButtonSize = int(120 * scaleFactor);
+    int ghX = width - ghButtonSize - int(40 * scaleFactor);
+    int ghY = height - ghButtonSize - int(40 * scaleFactor);
     if (mouseX > ghX && mouseX < ghX + ghButtonSize &&
         mouseY > ghY && mouseY < ghY + ghButtonSize) {
       openLink(GITHUB_URL);
@@ -431,20 +440,20 @@ void mousePressed() {
     }
     
     // Adjustment buttons
-    int adjButtonWidth = int(150 * scaleFactor);
-    int adjButtonHeight = int(60 * scaleFactor);
-    int incButtonX = width/2 - adjButtonWidth - int(10 * scaleFactor);
-    int decButtonX = width/2 + int(10 * scaleFactor);
-    int adjButtonY = exitY + buttonHeight + int(20 * scaleFactor);
+    int adjButtonWidth = int(280 * scaleFactor);
+    int adjButtonHeight = int(100 * scaleFactor);
+    int incButtonX = width/2 - adjButtonWidth - int(20 * scaleFactor);
+    int decButtonX = width/2 + int(20 * scaleFactor);
+    int adjButtonY = exitY + buttonHeight + int(50 * scaleFactor);
     if (mouseX > incButtonX && mouseX < incButtonX + adjButtonWidth &&
         mouseY > adjButtonY && mouseY < adjButtonY + adjButtonHeight) {
-      surface.setSize(width + int(100 * scaleFactor), height + int(75 * scaleFactor));
+      surface.setSize(width + int(200 * scaleFactor), height + int(150 * scaleFactor));
       return;
     }
     if (mouseX > decButtonX && mouseX < decButtonX + adjButtonWidth &&
         mouseY > adjButtonY && mouseY < adjButtonY + adjButtonHeight) {
-      int newWidth = max(width - int(100 * scaleFactor), int(400 * scaleFactor));
-      int newHeight = max(height - int(75 * scaleFactor), int(300 * scaleFactor));
+      int newWidth = max(width - int(200 * scaleFactor), int(900 * scaleFactor));
+      int newHeight = max(height - int(150 * scaleFactor), int(500 * scaleFactor));
       surface.setSize(newWidth, newHeight);
       return;
     }
